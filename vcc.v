@@ -6,9 +6,43 @@ fn main() {
     return
   }
 
+  input := os.args[1]
+
   println('.global main')
   println('main:')
-  println('  mov \$${os.args[1]}, %rax')
+
+  mut i   := 0
+  mut num := ''
+  for input[i].is_digit() {
+    num += input[i]
+    i++
+  }
+  println('  mov \$${num.int()}, %rax')
+
+  for i < input.len {
+    num = ''
+    match input[i] {
+      '+' {
+        i++
+        for input[i].is_digit() {
+          num += input[i]
+          i++
+        }
+        println('  add \$num, %rax')
+      }
+      '-' {
+        i++
+        for input[i].is_digit() {
+          num += input[i]
+          i++
+        }
+        println('  sub \$num, %rax')
+      }
+      else { eprintln('unexpected character: ${input[i]') }
+    }
+  }
+  
   println('  ret')
   return 
 }
+
