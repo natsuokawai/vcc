@@ -2,7 +2,7 @@ import os
 
 fn main() {
   if os.args.len != 2 {
-    eprintln('${os.args[0]}: invalid number of arguments')
+    eprintln('${os.args[0]}: inopid number of arguments')
     return
   }
 
@@ -33,9 +33,9 @@ fn main() {
       }
     }
   }
-  
+
   println('  ret')
-  return 
+  return
 }
 
 fn consume_number(s string) (int, string) {
@@ -53,6 +53,56 @@ fn consume_operator(s string) ?(string, string) {
   if op in '+-' {
     return op, s.substr(1, s.len)
   }
-  return error('invalid operator: $op')
+  return error('inopid operator: $op')
+}
+
+enum TokenKind {
+  reserved
+  num
+  eof
+}
+
+struct Token {
+  kind TokenKind
+  char string
+  len  int
+mut:
+	num  int
+  next &Token
+}
+
+fn new_token(mut cur_token &Token, kind TokenKind, char string, len int) &Token {
+	new := &Token{next: &Token{}, kind: kind, char: char, len: len}
+  cur_token.next = new
+  return &new
+}
+
+fn tokenize(s string) ?&Token {
+  mut head := &Token{}
+	mut num  := 0
+	mut op   := ''
+	mut rest := ''
+
+  num, rest = consume_number(s)
+  mut cur_token := new_token(mut head, TokenKind.num, num.str(), (s.len - rest.len))
+	cur_token.num = num
+
+  for rest.len > 0 {
+    op, rest = consume_operator(rest) or { exit(1) }
+		if rest[0].is_digit() {
+      num, rest = consume_number(rest)
+			cur_token = new_token(mut cur_token, TokenKind.num, num.str(), (s.len - rest.len))
+			cur_token.num = num
+		} else if rest[0].str() in '+=' {
+			op, rest = consume_operator(rest) or { exit(1) }
+			cur_token = new_token(mut cur_token, TokenKind.reserved, op, (s.len - rest.len))
+		} else {
+      return error('unexpected character: $op')
+		}
+  }
+
+  cur_token = new_token(mut cur_token, TokenKind.eof, '', 0)
+
+  return head.next
 }
 
