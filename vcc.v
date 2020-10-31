@@ -68,41 +68,40 @@ struct Token {
   len  int
 mut:
 	num  int
-  next &Token
 }
 
-fn new_token(mut cur_token &Token, kind TokenKind, char string, len int) &Token {
-	new := &Token{next: &Token{}, kind: kind, char: char, len: len}
-  cur_token.next = new
-  return &new
+fn new_token(kind TokenKind, char string, len int) &Token {
+	return &Token{kind: kind, char: char, len: len}
 }
 
-fn tokenize(s string) ?&Token {
-  mut head := &Token{}
+fn tokenize(s string) ?[]Token {
+  mut tokens := []Token{}
 	mut num  := 0
 	mut op   := ''
 	mut rest := ''
 
   num, rest = consume_number(s)
-  mut cur_token := new_token(mut head, TokenKind.num, num.str(), (s.len - rest.len))
-	cur_token.num = num
+  mut token := new_token(TokenKind.num, num.str(), (s.len - rest.len))
+	token.num = num
+  tokens << token
 
   for rest.len > 0 {
     op, rest = consume_operator(rest) or { exit(1) }
 		if rest[0].is_digit() {
       num, rest = consume_number(rest)
-			cur_token = new_token(mut cur_token, TokenKind.num, num.str(), (s.len - rest.len))
-			cur_token.num = num
+			token = new_token(TokenKind.num, num.str(), (s.len - rest.len))
+			token.num = num
+      tokens << token
 		} else if rest[0].str() in '+=' {
 			op, rest = consume_operator(rest) or { exit(1) }
-			cur_token = new_token(mut cur_token, TokenKind.reserved, op, (s.len - rest.len))
+			tokens << new_token(TokenKind.reserved, op, (s.len - rest.len))
 		} else {
       return error('unexpected character: $op')
 		}
   }
 
-  cur_token = new_token(mut cur_token, TokenKind.eof, '', 0)
+  tokens << new_token(TokenKind.eof, '', 0)
 
-  return head.next
+  return tokens
 }
 
