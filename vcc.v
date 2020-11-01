@@ -2,58 +2,62 @@ import os
 
 fn main() {
   if os.args.len != 2 {
-    eprintln('${os.args[0]}: inopid number of arguments')
-    return
+    eprintln('${os.args[0]}: invaid number of arguments')
+    exit(1)
   }
 
-  mut input_str := os.args[1]
-  mut num := 0
-  mut op  := ''
+  tokens := tokenize(os.args[1]) or {
+    eprintln(err)
+    exit(1)
+  }
 
   println('.global main')
   println('main:')
 
-  num, input_str = consume_number(input_str)
-  println('  mov \$$num, %rax')
-
-  for input_str.len > 0 {
-    op, input_str = consume_operator(input_str) or { exit(1) }
-    match op {
-      '+' {
-        num, input_str = consume_number(input_str)
-        println('  add \$$num, %rax')
+  for i := 0; i < tokens.len; i++ {
+    token := tokens[i]
+    match token.kind {
+      .num {
+        if token.kind == TokenKind.num {
+          println('  mov \$${token.num}, %rax')
+        } else {
+          eprintln('Number is expected.')
+          exit(1)
+        }
+        continue
       }
-      '-' {
-        num, input_str = consume_number(input_str)
-        println('  sub \$$num, %rax')
+      .reserved {
+        match token.str {
+          '+' {
+            i++
+            println('  add \$${tokens[i].num}, %rax')
+          }
+          '-' {
+            i++
+            println('  sub \$${tokens[i].num}, %rax')
+          }
+          else {
+            eprintln('unexpected character: ${token.str}')
+            exit(1)
+          }
+        }
       }
-      else {
-        eprintln('unexpected character: $op')
-        return
-      }
+      .eof { break }
     }
+
   }
 
   println('  ret')
   return
 }
 
-fn consume_number(s string) (int, string) {
+fn read_number(s string) string {
   mut num := ''
-  mut i   := 0
-  for i < s.len && s[i].is_digit() {
-    num += s[i].str()
-    i++
+  for char in s {
+    if !char.is_digit() { break }
+    num += char.str()
   }
-  return num.int(), s.substr(i, s.len)
-}
-
-fn consume_operator(s string) ?(string, string) {
-  op := s[0].str()
-  if op in '+-' {
-    return op, s.substr(1, s.len)
-  }
-  return error('inopid operator: $op')
+  return num
 }
 
 enum TokenKind {
@@ -64,43 +68,38 @@ enum TokenKind {
 
 struct Token {
   kind TokenKind
-  char string
-  len  int
+  str  string
 mut:
 	num  int
 }
 
-fn new_token(kind TokenKind, char string, len int) &Token {
-	return &Token{kind: kind, char: char, len: len}
+fn new_token(kind TokenKind, str string) &Token {
+	return &Token{kind: kind, str: str}
 }
 
-fn tokenize(s string) ?[]Token {
-  mut tokens := []Token{}
-	mut num  := 0
-	mut op   := ''
-	mut rest := ''
+fn tokenize(input_str string) ?[]Token {
+  mut s       := input_str.clone()
+  mut tokens  := []Token{}
+  mut str     := ''
+  mut i       := 0
 
-  num, rest = consume_number(s)
-  mut token := new_token(TokenKind.num, num.str(), (s.len - rest.len))
-	token.num = num
-  tokens << token
-
-  for rest.len > 0 {
-    op, rest = consume_operator(rest) or { exit(1) }
-		if rest[0].is_digit() {
-      num, rest = consume_number(rest)
-			token = new_token(TokenKind.num, num.str(), (s.len - rest.len))
-			token.num = num
-      tokens << token
-		} else if rest[0].str() in '+=' {
-			op, rest = consume_operator(rest) or { exit(1) }
-			tokens << new_token(TokenKind.reserved, op, (s.len - rest.len))
-		} else {
-      return error('unexpected character: $op')
-		}
+  for i < s.len {
+    if s[i].is_digit() {
+      str = read_number(s[i..])
+      tokens << new_token(TokenKind.num, str)
+      tokens[tokens.len - 1].num = str.int()
+      i += str.len
+      continue
+    } else if s[i].str() in '+-' {
+      tokens << new_token(TokenKind.reserved, s[i].str())
+      i++
+      continue
+    } else {
+      return error('unexpected character: ${s[i]}')
+    }
   }
 
-  tokens << new_token(TokenKind.eof, '', 0)
+  tokens << new_token(TokenKind.eof, '')
 
   return tokens
 }
