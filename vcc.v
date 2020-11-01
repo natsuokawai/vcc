@@ -84,19 +84,26 @@ fn tokenize(input_str string) ?[]Token {
   mut i       := 0
 
   for i < s.len {
+    if s[i].is_space() {
+      i++
+      continue
+    }
+
     if s[i].is_digit() {
       str = read_number(s[i..])
       tokens << new_token(TokenKind.num, str)
       tokens[tokens.len - 1].num = str.int()
       i += str.len
       continue
-    } else if s[i].str() in '+-' {
+    }
+
+    if s[i].str() in '+-' {
       tokens << new_token(TokenKind.reserved, s[i].str())
       i++
       continue
-    } else {
-      return error('unexpected character: ${s[i]}')
     }
+
+    return error('unexpected character: ${s[i]}')
   }
 
   tokens << new_token(TokenKind.eof, '')
