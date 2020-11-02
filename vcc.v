@@ -16,7 +16,7 @@ fn main() {
 		match token.kind {
 			.num {
 				if token.kind == TokenKind.num {
-					println('  mov \$$token.num, %rax')
+					println('  mov \$$token.str, %rax')
 				} else {
 					eprintln('Number is expected.')
 					exit(1)
@@ -27,11 +27,11 @@ fn main() {
 				match token.str {
 					'+' {
 						i++
-						println('  add \$${tokens[i].num}, %rax')
+						println('  add \$${tokens[i].str}, %rax')
 					}
 					'-' {
 						i++
-						println('  sub \$${tokens[i].num}, %rax')
+						println('  sub \$${tokens[i].str}, %rax')
 					}
 					else {
 						eprintln('unexpected character: $token.str')
@@ -68,14 +68,14 @@ enum TokenKind {
 struct Token {
 	kind TokenKind
 	str  string
-mut:
-	num  int
+	loc  int
 }
 
-fn new_token(kind TokenKind, str string) &Token {
+fn new_token(kind TokenKind, str string, loc int) &Token {
 	return &Token{
 		kind: kind
 		str: str
+		loc: loc
 	}
 }
 
@@ -83,26 +83,25 @@ fn tokenize(input_str string) ?[]Token {
 	mut s := input_str.clone()
 	mut tokens := []Token{}
 	mut str := ''
-	mut i := 0
-	for i < s.len {
-		if s[i].is_space() {
-			i++
+	mut loc := 0
+	for loc < s.len {
+		if s[loc].is_space() {
+			loc++
 			continue
 		}
-		if s[i].is_digit() {
-			str = read_number(s[i..])
-			tokens << new_token(TokenKind.num, str)
-			tokens[tokens.len - 1].num = str.int()
-			i += str.len
+		if s[loc].is_digit() {
+			str = read_number(s[loc..])
+			tokens << new_token(TokenKind.num, str, loc)
+			loc += str.len
 			continue
 		}
-		if s[i].str() in '+-' {
-			tokens << new_token(TokenKind.reserved, s[i].str())
-			i++
+		if s[loc].str() in '+-' {
+			tokens << new_token(TokenKind.reserved, s[loc].str(), loc)
+			loc++
 			continue
 		}
-		return error('unexpected character: ${s[i]}')
+		return error('unexpected character: ${s[loc]}')
 	}
-	tokens << new_token(TokenKind.eof, '')
+	tokens << new_token(TokenKind.eof, '', loc)
 	return tokens
 }
