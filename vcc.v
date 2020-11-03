@@ -5,7 +5,8 @@ fn main() {
 		eprintln('${os.args[0]}: invaid number of arguments')
 		exit(1)
 	}
-	tokens := tokenize(os.args[1]) or {
+	user_input := os.args[1]
+	tokens := tokenize(user_input) or {
 		eprintln(err)
 		exit(1)
 	}
@@ -18,7 +19,7 @@ fn main() {
 				if token.kind == TokenKind.num {
 					println('  mov \$$token.str, %rax')
 				} else {
-					eprintln('Number is expected.')
+					error_tok(user_input, token, 'Number is expected.')
 					exit(1)
 				}
 				continue
@@ -34,7 +35,7 @@ fn main() {
 						println('  sub \$${tokens[i].str}, %rax')
 					}
 					else {
-						eprintln('unexpected character: $token.str')
+						error_tok(user_input, token, 'unexpected character: $token.str')
 						exit(1)
 					}
 				}
@@ -46,6 +47,17 @@ fn main() {
 	}
 	println('  ret')
 	return
+}
+
+fn error_at(current_input string, loc int, str string) {
+	spaces := ' '.repeat(loc)
+	eprintln(current_input)
+	eprintln('$spaces^ $str')
+	exit(1)
+}
+
+fn error_tok(current_input string, tok Token, str string) {
+	error_at(current_input, tok.loc, str)
 }
 
 fn read_number(s string) string {
@@ -100,7 +112,7 @@ fn tokenize(input_str string) ?[]Token {
 			loc++
 			continue
 		}
-		return error('unexpected character: ${s[loc]}')
+		error_at(s, loc, 'unexpected character: $s[loc].str()')
 	}
 	tokens << new_token(TokenKind.eof, '', loc)
 	return tokens
