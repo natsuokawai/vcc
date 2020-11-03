@@ -68,6 +68,9 @@ fn read_number(s string) string {
 	return s[0..loc]
 }
 
+//
+// Tokenizer
+//
 enum TokenKind {
 	reserved
 	num
@@ -104,7 +107,7 @@ fn tokenize(input_str string) ?[]Token {
 			loc += str.len
 			continue
 		}
-		if s[loc].str() in '+-' {
+		if s[loc].str() in '+-*/()' {
 			tokens << new_token(TokenKind.reserved, s[loc].str(), loc)
 			loc++
 			continue
@@ -113,4 +116,74 @@ fn tokenize(input_str string) ?[]Token {
 	}
 	tokens << new_token(TokenKind.eof, '', loc)
 	return tokens
+}
+
+//
+// Parser
+//
+enum NodeKind {
+	add
+	sub
+	mul
+	div
+	num
+}
+
+struct Node {
+	kind NodeKind
+mut:
+	val  int
+	lhs  Node
+	rhs  Node
+}
+
+fn new_node(kind NodeKind) Node {
+	return Node{
+		kind: kind
+	}
+}
+
+fn new_binary(kind NodeKind, lhs Node, rhs Node) Node {
+	return Node{
+		kind: kind
+		lhs: lhs
+		rhs: rhs
+	}
+}
+
+fn new_num(val int) Node {
+	return Node{
+		kind: .num
+		val: val
+	}
+}
+
+// expr = mul ("+" mul | "-" mul)*
+fn expr(rest []Token) ([]Token, Node) {
+	tok := rest[0]
+	mut new_rest, mut node := mul(rest[1..])
+	mut rhs := Node{}
+	for {
+		if tok.str == '+' {
+			new_rest, rhs = mul(new_rest)
+			node = new_binary(.add, node, rhs)
+			continue
+		}
+		if tok.str == '-' {
+			new_rest, rhs = mul(new_rest)
+			node = new_binary(.sub, node, rhs)
+			continue
+		}
+		return new_rest, node
+	}
+}
+
+// mul = primary ("*" primary | "/" primary)*
+fn mul(rest []Token) ([]Token, Node) {
+	return []Token{}, Node{}
+}
+
+// primary = "(" expr ")" | num
+fn primary(rest []Token) ([]Token, Node) {
+	return []Token{}, Node{}
 }
