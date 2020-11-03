@@ -61,14 +61,11 @@ fn error_tok(current_input string, tok Token, str string) {
 }
 
 fn read_number(s string) string {
-	mut num := ''
-	for char in s {
-		if !char.is_digit() {
-			break
-		}
-		num += char.str()
+	mut loc := 0
+	for loc < s.len && s[loc].is_digit() {
+		loc++
 	}
-	return num
+	return s[0..loc]
 }
 
 enum TokenKind {
