@@ -133,8 +133,8 @@ struct Node {
 	kind NodeKind
 mut:
 	val  int
-	lhs  Node
-	rhs  Node
+	lhs  &Node = 0
+	rhs  &Node = 0
 }
 
 fn new_node(kind NodeKind) Node {
@@ -143,47 +143,72 @@ fn new_node(kind NodeKind) Node {
 	}
 }
 
-fn new_binary(kind NodeKind, lhs Node, rhs Node) Node {
-	return Node{
+fn new_binary(kind NodeKind, lhs &Node, rhs &Node) &Node {
+	return &Node{
 		kind: kind
 		lhs: lhs
 		rhs: rhs
 	}
 }
 
-fn new_num(val int) Node {
-	return Node{
+fn new_num(val int) &Node {
+	return &Node{
 		kind: .num
 		val: val
 	}
 }
 
 // expr = mul ("+" mul | "-" mul)*
-fn expr(rest []Token) ([]Token, Node) {
-	tok := rest[0]
-	mut new_rest, mut node := mul(rest[1..])
-	mut rhs := Node{}
+fn expr(tokens []Token) ([]Token, &Node) {
+	tok := tokens[0]
+	mut rest, mut node := mul(tokens[1..])
+	mut rhs := &Node{}
 	for {
 		if tok.str == '+' {
-			new_rest, rhs = mul(new_rest)
+			rest, rhs = mul(rest)
 			node = new_binary(.add, node, rhs)
 			continue
 		}
 		if tok.str == '-' {
-			new_rest, rhs = mul(new_rest)
+			rest, rhs = mul(rest)
 			node = new_binary(.sub, node, rhs)
 			continue
 		}
-		return new_rest, node
+		return rest, node
 	}
 }
 
 // mul = primary ("*" primary | "/" primary)*
-fn mul(rest []Token) ([]Token, Node) {
-	return []Token{}, Node{}
+fn mul(tokens []Token) ([]Token, &Node) {
+	tok := tokens[0]
+	mut rest, mut node := primary(tokens[1..])
+	mut rhs := &Node{}
+	for {
+		if tok.str == '*' {
+			rest, rhs = mul(rest)
+			node = new_binary(.mul, node, rhs)
+			continue
+		}
+		if tok.str == '/' {
+			rest, rhs = mul(rest)
+			node = new_binary(.div, node, rhs)
+			continue
+		}
+		return rest, node
+	}
 }
 
 // primary = "(" expr ")" | num
-fn primary(rest []Token) ([]Token, Node) {
-	return []Token{}, Node{}
+fn primary(tokens []Token) ([]Token, &Node) {
+	tok := tokens[0]
+	if tok.str == '(' {
+		rest, node := expr(tokens[1..])
+		if tok.str == ')' {
+			return rest, node
+		} else {
+			panic('hoge')
+		}
+	}
+	node := new_num(tok.str.int())
+	return tokens[1..], node
 }
