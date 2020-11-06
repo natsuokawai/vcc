@@ -10,43 +10,8 @@ fn main() {
 		eprintln(err)
 		exit(1)
 	}
-	println('.global main')
-	println('main:')
-	for i := 0; i < tokens.len; i++ {
-		token := tokens[i]
-		match token.kind {
-			.num {
-				if token.kind == TokenKind.num {
-					println('  mov \$$token.str, %rax')
-				} else {
-					error_tok(user_input, token, 'Number is expected.')
-					exit(1)
-				}
-				continue
-			}
-			.reserved {
-				match token.str {
-					'+' {
-						i++
-						println('  add \$${tokens[i].str}, %rax')
-					}
-					'-' {
-						i++
-						println('  sub \$${tokens[i].str}, %rax')
-					}
-					else {
-						error_tok(user_input, token, 'unexpected character: $token.str')
-						exit(1)
-					}
-				}
-			}
-			.eof {
-				break
-			}
-		}
-	}
-	println('  ret')
-	return
+	_, node := expr(tokens)
+	gen(node)
 }
 
 fn error_at(current_input string, loc int, str string) {
@@ -206,9 +171,70 @@ fn primary(tokens []Token) ([]Token, &Node) {
 		if tok.str == ')' {
 			return rest, node
 		} else {
-			panic('hoge')
+			panic('expected )')
 		}
 	}
 	node := new_num(tok.str.int())
 	return tokens[1..], node
+}
+
+//
+// Code generator
+//
+fn gen(node &Node) {
+	mut top := 0
+	println('.global main')
+	println('main:')
+	println('  push %r12')
+	println('  push %r13')
+	println('  push %r14')
+	println('  push %r15')
+
+	top = gen_expr(node, top)
+
+	println('  mov ${reg(top - 1)}, %rax')
+
+	println('  pop %r15')
+	println('  pop %r14')
+	println('  pop %r13')
+	println('  pop %r12')
+	println('  ret')
+}
+
+fn gen_expr(node &Node, t int) int {
+	mut top := t
+	if node.kind == .num {
+		top++
+		println('  mov \$$node.val, ${reg(top)}')
+	}
+
+	top = gen_expr(node.lhs, top)
+	top = gen_expr(node.rhs, top)
+	
+	rd := reg(top - 2)
+	rs := reg(top - 1)
+	top--
+
+	match node.kind {
+		.add { println('  add $rs, $rd') }
+		.sub { println('  sub $rs, $rd') }
+		.mul { println('  imul $rs, $rd') }
+		.div {
+			println('  mov $rd, %rax')
+			println('  cqo')
+			println('  idiv $rs')
+			println('  mov %rax, $rd')
+		}
+		else { panic('invalid expression')}
+	}
+
+	return top
+}
+
+fn reg(idx int) string {
+	r := ['r10', 'r11', 'r12', 'r13', '14', 'r15']
+	if idx < 0 || r.len <= idx {
+		panic('register out of index: $idx')
+	}
+	return r[idx]
 }
