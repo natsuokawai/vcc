@@ -125,10 +125,13 @@ fn new_num(val int) &Node {
 
 // expr = mul ("+" mul | "-" mul)*
 fn expr(tokens []Token) ([]Token, &Node) {
-	tok := tokens[0]
+	mut tok := tokens[0]
 	mut rest, mut node := mul(tokens)
 	mut rhs := &Node{}
 	for {
+		if rest.len > 0 {
+			tok = rest[0]
+		}
 		if tok.str == '+' {
 			rest, rhs = mul(rest[1..])
 			node = new_binary(.add, node, rhs)
@@ -145,10 +148,13 @@ fn expr(tokens []Token) ([]Token, &Node) {
 
 // mul = primary ("*" primary | "/" primary)*
 fn mul(tokens []Token) ([]Token, &Node) {
-	tok := tokens[0]
+	mut tok := tokens[0]
 	mut rest, mut node := primary(tokens)
 	mut rhs := &Node{}
 	for {
+		if rest.len > 0 {
+			tok = rest[0]
+		}
 		if tok.str == '*' {
 			rest, rhs = mul(rest[1..])
 			node = new_binary(.mul, node, rhs)
@@ -175,8 +181,7 @@ fn primary(tokens []Token) ([]Token, &Node) {
 		}
 	}
 	node := new_num(tok.str.int())
-
-	rest := if tokens.len > 1 { tokens[1..] } else { []Token{} }
+	rest := if tokens.len >= 2 { tokens[1..] } else { tokens[0..] }
 	return rest, node
 }
 
@@ -191,11 +196,8 @@ fn gen(node &Node) {
 	println('  push %r13')
 	println('  push %r14')
 	println('  push %r15')
-
 	top = gen_expr(node, top)
-
 	println('  mov ${reg(top - 1)}, %rax')
-
 	println('  pop %r15')
 	println('  pop %r14')
 	println('  pop %r13')
@@ -210,27 +212,31 @@ fn gen_expr(node &Node, t int) int {
 		top++
 		return top
 	}
-
 	top = gen_expr(node.lhs, top)
 	top = gen_expr(node.rhs, top)
-	
 	rd := reg(top - 2)
 	rs := reg(top - 1)
 	top--
-
 	match node.kind {
-		.add { println('  add $rs, $rd') }
-		.sub { println('  sub $rs, $rd') }
-		.mul { println('  imul $rs, $rd') }
+		.add {
+			println('  add $rs, $rd')
+		}
+		.sub {
+			println('  sub $rs, $rd')
+		}
+		.mul {
+			println('  imul $rs, $rd')
+		}
 		.div {
 			println('  mov $rd, %rax')
 			println('  cqo')
 			println('  idiv $rs')
 			println('  mov %rax, $rd')
 		}
-		else { panic('invalid expression')}
+		else {
+			panic('invalid expression')
+		}
 	}
-
 	return top
 }
 
