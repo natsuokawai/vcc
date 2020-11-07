@@ -126,16 +126,16 @@ fn new_num(val int) &Node {
 // expr = mul ("+" mul | "-" mul)*
 fn expr(tokens []Token) ([]Token, &Node) {
 	tok := tokens[0]
-	mut rest, mut node := mul(tokens[1..])
+	mut rest, mut node := mul(tokens)
 	mut rhs := &Node{}
 	for {
 		if tok.str == '+' {
-			rest, rhs = mul(rest)
+			rest, rhs = mul(rest[1..])
 			node = new_binary(.add, node, rhs)
 			continue
 		}
 		if tok.str == '-' {
-			rest, rhs = mul(rest)
+			rest, rhs = mul(rest[1..])
 			node = new_binary(.sub, node, rhs)
 			continue
 		}
@@ -146,16 +146,16 @@ fn expr(tokens []Token) ([]Token, &Node) {
 // mul = primary ("*" primary | "/" primary)*
 fn mul(tokens []Token) ([]Token, &Node) {
 	tok := tokens[0]
-	mut rest, mut node := primary(tokens[1..])
+	mut rest, mut node := primary(tokens)
 	mut rhs := &Node{}
 	for {
 		if tok.str == '*' {
-			rest, rhs = mul(rest)
+			rest, rhs = mul(rest[1..])
 			node = new_binary(.mul, node, rhs)
 			continue
 		}
 		if tok.str == '/' {
-			rest, rhs = mul(rest)
+			rest, rhs = mul(rest[1..])
 			node = new_binary(.div, node, rhs)
 			continue
 		}
@@ -168,14 +168,16 @@ fn primary(tokens []Token) ([]Token, &Node) {
 	tok := tokens[0]
 	if tok.str == '(' {
 		rest, node := expr(tokens[1..])
-		if tok.str == ')' {
-			return rest, node
+		if rest[0].str == ')' {
+			return rest[1..], node
 		} else {
 			panic('expected )')
 		}
 	}
 	node := new_num(tok.str.int())
-	return tokens[1..], node
+
+	rest := if tokens.len > 1 { tokens[1..] } else { []Token{} }
+	return rest, node
 }
 
 //
@@ -204,8 +206,9 @@ fn gen(node &Node) {
 fn gen_expr(node &Node, t int) int {
 	mut top := t
 	if node.kind == .num {
-		top++
 		println('  mov \$$node.val, ${reg(top)}')
+		top++
+		return top
 	}
 
 	top = gen_expr(node.lhs, top)
@@ -232,7 +235,7 @@ fn gen_expr(node &Node, t int) int {
 }
 
 fn reg(idx int) string {
-	r := ['r10', 'r11', 'r12', 'r13', '14', 'r15']
+	r := ['%r10', '%r11', '%r12', '%r13', '%r14', '%r15']
 	if idx < 0 || r.len <= idx {
 		panic('register out of index: $idx')
 	}
