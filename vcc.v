@@ -102,6 +102,10 @@ enum NodeKind {
 	mul
 	div
 	num
+	eq
+	ne
+	lt
+	le
 }
 
 struct Node {
@@ -133,7 +137,10 @@ fn new_num(val int) &Node {
 	}
 }
 
-// expr = mul ("+" mul | "-" mul)*
+// expr = equality
+// equality = relation ("==" relation | "!=" relation)
+// relation = add ("<" add | "<=" add | ">" add | ">=" add)
+// add = mul ("+" mul | "-" mul)* 
 fn expr(tokens []Token) ([]Token, &Node) {
 	mut tok := tokens[0]
 	mut rest, mut node := mul(tokens)
