@@ -146,27 +146,42 @@ fn expr(tokens []Token) ([]Token, &Node) {
 	}
 }
 
-// mul = primary ("*" primary | "/" primary)*
+// mul = unary ("*" unary | "/" unary)*
 fn mul(tokens []Token) ([]Token, &Node) {
 	mut tok := tokens[0]
-	mut rest, mut node := primary(tokens)
+	mut rest, mut node := unary(tokens)
 	mut rhs := &Node{}
 	for {
 		if rest.len > 0 {
 			tok = rest[0]
 		}
 		if tok.str == '*' {
-			rest, rhs = primary(rest[1..])
+			rest, rhs = unary(rest[1..])
 			node = new_binary(.mul, node, rhs)
 			continue
 		}
 		if tok.str == '/' {
-			rest, rhs = primary(rest[1..])
+			rest, rhs = unary(rest[1..])
 			node = new_binary(.div, node, rhs)
 			continue
 		}
 		return rest, node
 	}
+}
+
+// unary = ("+" | "-") unary
+// | primary
+fn unary(tokens []Token) ([]Token, &Node) {
+	mut tok := tokens[0]
+	if tok.str == '+' {
+		return unary(tokens[1..])
+	}
+	if tok.str == '-' {
+		rest, mut node := unary(tokens[1..])
+		node = new_binary(.sub, new_num(0), node)
+		return rest, node
+	}
+	return primary(tokens)
 }
 
 // primary = "(" expr ")" | num
