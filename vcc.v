@@ -68,13 +68,23 @@ fn tokenize(input_str string) ?[]Token {
 		}
 		if s[loc].is_digit() {
 			str = read_number(s[loc..])
-			tokens << new_token(TokenKind.num, str, loc)
+			tokens << new_token(.num, str, loc)
 			loc += str.len
 			continue
 		}
 		if s[loc].str() in '+-*/()' {
-			tokens << new_token(TokenKind.reserved, s[loc].str(), loc)
+			tokens << new_token(.reserved, s[loc].str(), loc)
 			loc++
+			continue
+		}
+		if s[loc].str() in '!=<>' {
+			if s[loc..].len > 2 && s[loc + 1].str() == '=' {
+				tokens << new_token(.reserved, '${s[loc]}=', loc)
+				loc += 2
+				continue
+			}
+			tokens << new_token(.reserved, s[loc].str(), loc)
+			loc ++
 			continue
 		}
 		error_at(s, loc, 'unexpected character: $s[loc].str()')
