@@ -156,12 +156,12 @@ fn mul(tokens []Token) ([]Token, &Node) {
 			tok = rest[0]
 		}
 		if tok.str == '*' {
-			rest, rhs = mul(rest[1..])
+			rest, rhs = primary(rest[1..])
 			node = new_binary(.mul, node, rhs)
 			continue
 		}
 		if tok.str == '/' {
-			rest, rhs = mul(rest[1..])
+			rest, rhs = primary(rest[1..])
 			node = new_binary(.div, node, rhs)
 			continue
 		}
