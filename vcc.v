@@ -84,7 +84,7 @@ fn tokenize(input_str string) ?[]Token {
 				continue
 			}
 			tokens << new_token(.reserved, s[loc].str(), loc)
-			loc ++
+			loc++
 			continue
 		}
 		error_at(s, loc, 'unexpected character: $s[loc].str()')
@@ -138,10 +138,68 @@ fn new_num(val int) &Node {
 }
 
 // expr = equality
-// equality = relation ("==" relation | "!=" relation)
-// relation = add ("<" add | "<=" add | ">" add | ">=" add)
-// add = mul ("+" mul | "-" mul)* 
 fn expr(tokens []Token) ([]Token, &Node) {
+	return equality(tokens)
+}
+
+// equality = relation ("==" relation | "!=" relation)
+fn equality(tokens []Token) ([]Token, &Node) {
+	mut tok := tokens[0]
+	mut rest, mut node := relation(tokens)
+	mut rhs := &Node{}
+	for {
+		if rest.len > 0 {
+			tok = rest[0]
+		}
+		if tok.str == '==' {
+			rest, rhs = relation(rest[1..])
+			node = new_binary(.eq, node, rhs)
+			continue
+		}
+		if tok.str == '!=' {
+			rest, rhs = relation(rest[1..])
+			node = new_binary(.ne, node, rhs)
+			continue
+		}
+		return rest, node
+	}
+}
+
+// relation = add ("<" add | "<=" add | ">" add | ">=" add)
+fn relation(tokens []Token) ([]Token, &Node) {
+	mut tok := tokens[0]
+	mut rest, mut node := add(tokens)
+	mut rhs := &Node{}
+	for {
+		if rest.len > 0 {
+			tok = rest[0]
+		}
+		if tok.str == '<' {
+			rest, rhs = add(rest[1..])
+			node = new_binary(.lt, node, rhs)
+			continue
+		}
+		if tok.str == '<=' {
+			rest, rhs = add(rest[1..])
+			node = new_binary(.le, node, rhs)
+			continue
+		}
+		if tok.str == '>' {
+			rest, rhs = add(rest[1..])
+			node = new_binary(.lt, rhs, node)
+			continue
+		}
+		if tok.str == '>=' {
+			rest, rhs = add(rest[1..])
+			node = new_binary(.le, rhs, node)
+			continue
+		}
+		return rest, node
+	}
+}
+
+// add = mul ("+" mul | "-" mul)*
+fn add(tokens []Token) ([]Token, &Node) {
 	mut tok := tokens[0]
 	mut rest, mut node := mul(tokens)
 	mut rhs := &Node{}
