@@ -78,8 +78,8 @@ fn tokenize(input_str string) ?[]Token {
 			continue
 		}
 		if s[loc].str() in '!=<>' {
-			if s[loc..].len > 2 && s[loc + 1].str() == '=' {
-				tokens << new_token(.reserved, '${s[loc]}=', loc)
+			if s[loc..].len >= 2 && s[loc + 1].str() == '=' {
+				tokens << new_token(.reserved, '${s[loc].str()}=', loc)
 				loc += 2
 				continue
 			}
@@ -322,6 +322,26 @@ fn gen_expr(node &Node, t int) int {
 			println('  cqo')
 			println('  idiv $rs')
 			println('  mov %rax, $rd')
+		}
+		.eq {
+			println('  cmp $rs, $rd')
+			println('  sete %al')
+			println('  movzb %al, $rd')
+		}
+		.ne {
+			println('  cmp $rs, $rd')
+			println('  setne %al')
+			println('  movzb %al, $rd')
+		}
+		.lt {
+			println('  cmp $rs, $rd')
+			println('  setl %al')
+			println('  movzb %al, $rd')
+		}
+		.le {
+			println('  cmp $rs, $rd')
+			println('  setle %al')
+			println('  movzb %al, $rd')
 		}
 		else {
 			panic('invalid expression')
