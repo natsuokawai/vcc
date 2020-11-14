@@ -6,3 +6,4 @@
 tmp*
 vcc
 .noprefix*
+*_test

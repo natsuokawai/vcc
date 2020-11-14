@@ -44,7 +44,7 @@ pub fn tokenize(input_str string) ?[]Token {
 			loc++
 			continue
 		}
-		error_at(s, loc, 'unexpected character: $s[loc].str()')
+		error_at(s, loc, 'unexpected character: "${s[loc].str()}"')
 	}
 	tokens << new_token(TokenKind.eof, '', loc)
 	return tokens
