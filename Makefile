@@ -1,5 +1,5 @@
-vcc: main.v
-	v -o vcc main.v
+vcc: ./src/main.v
+	v -o vcc ./src/main.v
 test: vcc
 	./test.sh
 clean:
