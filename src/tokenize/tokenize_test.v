@@ -6,7 +6,7 @@ struct Expected {
 }
 
 fn test_tokenize() {
-	input := '1 + 42 * (9- 3) / 4 < 6 <= 10 == 0 >= 0 > 0'
+	input := '1 + 42 * (9- 3) / 4 < 6 <= 10 == 0 >= 0 > 0;'
 
 	actual := tokenize(input) or {
 		eprintln(err)
@@ -35,6 +35,7 @@ fn test_tokenize() {
 		Expected{kind: .num,      str: '0'},
 		Expected{kind: .reserved, str: '>'},
 		Expected{kind: .num,      str: '0'},
+		Expected{kind: .reserved, str: ';'},
 		Expected{kind: .eof, str: ''}
 	]
 

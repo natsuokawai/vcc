@@ -29,7 +29,7 @@ pub fn tokenize(input_str string) ?[]Token {
 			loc += str.len
 			continue
 		}
-		if s[loc].str() in '+-*/()' {
+		if s[loc].str() in '+-*/();' {
 			tokens << new_token(.reserved, s[loc].str(), loc)
 			loc++
 			continue
