@@ -27,6 +27,29 @@ pub fn parse(tokens []t.Token) ([]t.Token, &Node) {
 	return expr(tokens)
 }
 
+// stmt = expr_stmt
+fn stmt(tokens []t.Token) []&Node {
+	return expr_stmt(tokens)
+}
+
+// expr_stmt = expr ";"
+fn expr_stmt(tokens []t.Token) []&Node {
+	mut nodes := []&Node{}
+	mut rest := []t.Token{}
+	mut node := &Node{}
+	for rest.len > 0 {
+		rest, node = expr(tokens)
+		if rest[0].str() == ';' {
+			nodes << node
+			tokens = rest[1..]
+		} else if rest[0].kind == .eof {
+			return nodes
+		} else{
+			panic('expected ";"')
+		}
+	}
+}
+
 // expr = equality
 fn expr(tokens []t.Token) ([]t.Token, &Node) {
 	return equality(tokens)
