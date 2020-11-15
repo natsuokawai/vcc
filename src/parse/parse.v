@@ -23,29 +23,12 @@ pub mut:
 	rhs  &Node = 0
 }
 
-fn new_node(kind NodeKind) Node {
-	return Node{
-		kind: kind
-	}
-}
-
-fn new_binary(kind NodeKind, lhs &Node, rhs &Node) &Node {
-	return &Node{
-		kind: kind
-		lhs: lhs
-		rhs: rhs
-	}
-}
-
-fn new_num(val int) &Node {
-	return &Node{
-		kind: .num
-		val: val
-	}
+pub fn parse(tokens []t.Token) ([]t.Token, &Node) {
+	return expr(tokens)
 }
 
 // expr = equality
-pub fn expr(tokens []t.Token) ([]t.Token, &Node) {
+fn expr(tokens []t.Token) ([]t.Token, &Node) {
 	return equality(tokens)
 }
 
@@ -180,4 +163,25 @@ fn primary(tokens []t.Token) ([]t.Token, &Node) {
 	node := new_num(tok.str.int())
 	rest := if tokens.len >= 2 { tokens[1..] } else { tokens[0..] }
 	return rest, node
+}
+
+fn new_node(kind NodeKind) Node {
+	return Node{
+		kind: kind
+	}
+}
+
+fn new_binary(kind NodeKind, lhs &Node, rhs &Node) &Node {
+	return &Node{
+		kind: kind
+		lhs: lhs
+		rhs: rhs
+	}
+}
+
+fn new_num(val int) &Node {
+	return &Node{
+		kind: .num
+		val: val
+	}
 }

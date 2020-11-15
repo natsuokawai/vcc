@@ -13,6 +13,6 @@ fn main() {
 		eprintln(err)
 		exit(1)
 	}
-	_, node := parse.expr(tokens)
+	_, node := parse.parse(tokens)
 	codegen.gen(node)
 }
