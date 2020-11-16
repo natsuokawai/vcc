@@ -7,11 +7,12 @@ enum NodeKind {
 	sub
 	mul
 	div
-	num
 	eq
 	ne
 	lt
 	le
+	num
+	expr_stmt
 }
 
 struct Node {
@@ -27,27 +28,21 @@ pub fn parse(tokens []t.Token) ([]t.Token, &Node) {
 	return expr(tokens)
 }
 
-// stmt = expr_stmt
-fn stmt(tokens []t.Token) []&Node {
+// stmt = expr-stmt
+fn stmt(tokens []t.Token) ([]t.Token, &Node) {
 	return expr_stmt(tokens)
 }
 
 // expr_stmt = expr ";"
-fn expr_stmt(tokens []t.Token) []&Node {
-	mut nodes := []&Node{}
-	mut rest := []t.Token{}
-	mut node := &Node{}
-	for rest.len > 0 {
-		rest, node = expr(tokens)
-		if rest[0].str() == ';' {
-			nodes << node
-			tokens = rest[1..]
-		} else if rest[0].kind == .eof {
-			return nodes
-		} else{
-			panic('expected ";"')
-		}
+fn expr_stmt(tokens []t.Token) ([]t.Token, &Node) {
+	mut rest, mut node := expr(tokens)
+	node = Node{kind: .expr_stmt, lhs: node}
+	if rest[0].str() == ';' {
+		rest = rest[1..]
+	} else {
+		panic('expected ";"')
 	}
+	return rest, node
 }
 
 // expr = equality
