@@ -1,4 +1,4 @@
-vcc: ./src/main.v
+vcc: ./src/*
 	v -o vcc ./src/main.v
 test: vcc
 	./test.sh

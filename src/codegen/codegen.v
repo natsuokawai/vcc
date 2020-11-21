@@ -2,7 +2,7 @@ module codegen
 
 import parse as p
 
-pub fn gen(node &p.Node) {
+pub fn gen(nodes []&p.Node) {
 	mut top := 0
 	println('.global main')
 	println('main:')
@@ -11,12 +11,33 @@ pub fn gen(node &p.Node) {
 	println('  push %r14')
 	println('  push %r15')
 	top = gen_expr(node, top)
+
+	for node in nodes {
+		gem_stmt(node, top)
+		assert top == 0
+	}
+
 	println('  mov ${reg(top - 1)}, %rax')
 	println('  pop %r15')
 	println('  pop %r14')
 	println('  pop %r13')
 	println('  pop %r12')
 	println('  ret')
+}
+
+fn gen_stmt(node &p.Node, t int) {
+	mut top := t
+	match node.kind {
+		.expr_stmt {
+			gem_expr(node.lhs)
+			top--
+			println('  mov ${reg(top)}, %rax')
+			return
+		}
+		else {
+			panic('invalid stmt')
+		}
+	}
 }
 
 fn gen_expr(node &p.Node, t int) int {

@@ -24,8 +24,18 @@ pub mut:
 	rhs  &Node = 0
 }
 
-pub fn parse(tokens []t.Token) ([]t.Token, &Node) {
-	return expr(tokens)
+// program = stmt*
+pub fn parse(tokens []t.Token) []&Node {
+	mut nodes := []&Node{}
+	mut node  := &Node{}
+	mut rest  := []t.Token{}
+	mut tok   := t.Token{}
+
+	for tok.kind != .eof {
+		rest, node = stmt(tokens)
+		nodes << node
+		tok = rest[0]
+	}
 }
 
 // stmt = expr-stmt
@@ -36,7 +46,7 @@ fn stmt(tokens []t.Token) ([]t.Token, &Node) {
 // expr_stmt = expr ";"
 fn expr_stmt(tokens []t.Token) ([]t.Token, &Node) {
 	mut rest, mut node := expr(tokens)
-	node = Node{kind: .expr_stmt, lhs: node}
+	node = &Node{kind: .expr_stmt, lhs: node}
 	if rest[0].str() == ';' {
 		rest = rest[1..]
 	} else {
@@ -71,6 +81,7 @@ fn equality(tokens []t.Token) ([]t.Token, &Node) {
 		}
 		return rest, node
 	}
+	return rest, node
 }
 
 // relation = add ("<" add | "<=" add | ">" add | ">=" add)
@@ -104,6 +115,7 @@ fn relation(tokens []t.Token) ([]t.Token, &Node) {
 		}
 		return rest, node
 	}
+	return rest, node
 }
 
 // add = mul ("+" mul | "-" mul)*
@@ -127,6 +139,7 @@ fn add(tokens []t.Token) ([]t.Token, &Node) {
 		}
 		return rest, node
 	}
+	return rest, node
 }
 
 // mul = unary ("*" unary | "/" unary)*
@@ -150,6 +163,7 @@ fn mul(tokens []t.Token) ([]t.Token, &Node) {
 		}
 		return rest, node
 	}
+	return rest, node
 }
 
 // unary = ("+" | "-") unary
